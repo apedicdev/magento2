@@ -8,6 +8,8 @@ namespace Magento\Catalog\Block\Product;
 use Magento\Catalog\Helper\ImageFactory as HelperFactory;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Image\NotLoadInfoImageException;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\ScopeInterface;
 
 class ImageBuilder
 {
@@ -35,17 +37,24 @@ class ImageBuilder
      * @var array
      */
     protected $attributes = [];
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
 
     /**
      * @param HelperFactory $helperFactory
      * @param ImageFactory $imageFactory
+     * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
         HelperFactory $helperFactory,
-        ImageFactory $imageFactory
+        ImageFactory $imageFactory,
+        ScopeConfigInterface $scopeConfig
     ) {
         $this->helperFactory = $helperFactory;
         $this->imageFactory = $imageFactory;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -121,12 +130,8 @@ class ImageBuilder
      */
     public function create()
     {
-        /** @var \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface $simpleOption */
-        $simpleOption = $this->product->getCustomOption('simple_product');
-
-        if ($simpleOption !== null) {
-            $optionProduct = $simpleOption->getProduct();
-            $this->setProduct($optionProduct);
+        if ($this->getCheckoutCartImageConfiguration() === 'itself') {
+            $this->setSimpleProduct();
         }
 
         /** @var \Magento\Catalog\Helper\Image $helper */
@@ -159,5 +164,30 @@ class ImageBuilder
         ];
 
         return $this->imageFactory->create($data);
+    }
+
+    /**
+     * Get the product image checkout configuration value
+     *
+     * @return string
+     */
+    private function getCheckoutCartImageConfiguration()
+    {
+        return $this->scopeConfig->getValue('checkout/cart/configurable_product_image',
+            ScopeInterface::SCOPE_STORE);
+    }
+
+    /**
+     * Set the simple product for retrieving the product image
+     */
+    private function setSimpleProduct()
+    {
+        /** @var \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface $simpleOption */
+        $simpleOption = $this->product->getCustomOption('simple_product');
+
+        if ($simpleOption !== null) {
+            $optionProduct = $simpleOption->getProduct();
+            $this->setProduct($optionProduct);
+        }
     }
 }
