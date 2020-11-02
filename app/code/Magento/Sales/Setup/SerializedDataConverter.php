@@ -30,7 +30,7 @@ class SerializedDataConverter extends SerializedToJson
         $valueUnserialized = $this->unserializeValue($value);
         if (isset($valueUnserialized['options'])) {
             foreach ($valueUnserialized['options'] as $key => $option) {
-                if ($option['option_type'] === 'file') {
+                if (isset($option['option_type']) && $option['option_type'] === 'file') {
                     $valueUnserialized['options'][$key]['option_value'] = parent::convert($option['option_value']);
                 }
             }
